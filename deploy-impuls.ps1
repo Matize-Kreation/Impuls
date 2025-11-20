@@ -35,11 +35,20 @@ Write-Host "Starting Vercel deployment..." -ForegroundColor Yellow
 
 try {
     Set-Location $projectPath
-    vercel --prod --confirm
-    Write-Host "Vercel deployment successful." -ForegroundColor Green
+
+    # Vercel Deployment ausführen und Exitcode prüfen
+    $null = & vercel --prod --yes
+    $exitCode = $LASTEXITCODE
+
+    if ($exitCode -ne 0) {
+        Write-Host "Error during Vercel deployment. Exit code: $exitCode" -ForegroundColor Red
+    }
+    else {
+        Write-Host "Vercel deployment successful." -ForegroundColor Green
+    }
 }
 catch {
-    Write-Host "Error during Vercel deployment: $_" -ForegroundColor Red
+    Write-Host "Error during Vercel deployment (PowerShell-level): $_" -ForegroundColor Red
 }
 
 Write-Host ""
