@@ -2,58 +2,129 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import ImpulsRoom from './ImpulsRoom'
+import { RoomType } from './types'
 
 interface NavigationProps {
-  currentRoom: string
+  currentRoom: RoomType
 }
 
-export default function Navigation({ currentRoom }: NavigationProps) {
-  const rooms = [
-    { id: 'impuls', name: 'Impuls', path: '/', image: '/impuls-raum.png', color: '#4f46e5' },
-    { id: 'erde', name: 'Erde', path: '/erde', image: '/element-erde.png', color: '#22c55e' },
-    { id: 'wasser', name: 'Wasser', path: '/wasser', image: '/element-wasser.png', color: '#06b6d4' },
-    { id: 'feuer', name: 'Feuer', path: '/feuer', image: '/element-feuer.png', color: '#f97316' },
-    { id: 'wind', name: 'Wind', path: '/wind', image: '/element-wind.png', color: '#10b981' },
-    { id: 'aether', name: 'Äther', path: '/aether', image: '/element-aether.png', color: '#8b5cf6' },
-  ]
+const rooms: { id: RoomType; path: string; image: string }[] = [
+  { id: 'impuls', path: '/', image: '/impuls-raum.png' },
+  { id: 'erde', path: '/erde', image: '/element-erde.png' },
+  { id: 'wasser', path: '/wasser', image: '/element-wasser.png' },
+  { id: 'feuer', path: '/feuer', image: '/element-feuer.png' },
+  { id: 'wind', path: '/wind', image: '/element-wind.png' },
+  { id: 'aether', path: '/aether', image: '/element-aether.png' },
+]
 
+export default function Navigation({ currentRoom }: NavigationProps) {
   return (
-    <>
-      <nav className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
-        <div className="flex items-center space-x-4">
-          {rooms.map(room => (
-            <Link
-              key={room.id}
-              href={room.path}
-              className={`
-                w-12 h-12 rounded-full flex items-center justify-center
-                transition duration-300
-                ${currentRoom === room.id
-                  ? `scale-110 bg-white/20 shadow-[0_0_16px_${room.color}] animate-pulse-glow`
-                  : `hover:scale-125 hover:shadow-[0_0_12px_${room.color}] active:scale-95`
-                }
-              `}
+    <div className="fixed bottom-0 left-0 w-full flex flex-col items-center pointer-events-none z-50">
+      {/* ---------- Separiertes Impuls-Symbol (nicht im Impulsraum) ---------- */}
+      {currentRoom !== 'impuls' && (
+        <div className="absolute -top-16 z-50 pointer-events-auto">
+          <Link href="/">
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-md shadow-xl transition-transform duration-300 hover:scale-105 active:scale-95"
+              role="button"
+              aria-label="Impuls"
             >
-              <Image src={room.image} width={32} height={32} alt={room.name} />
-            </Link>
-          ))}
+              <Image
+                src="/impuls-raum.png"
+                alt="Impuls"
+                width={56}
+                height={56}
+                className="select-none pointer-events-none"
+              />
+            </div>
+          </Link>
         </div>
+      )}
+
+      {/* ---------- Einheitliche Elementenleiste ---------- */}
+      <nav
+        aria-label="Element navigation"
+        className="pointer-events-auto w-full max-w-md mx-auto bg-black/30 backdrop-blur-sm rounded-t-2xl px-6 py-3 flex justify-center gap-6 relative"
+      >
+        {rooms
+          .filter(r => r.id !== 'impuls') // Impuls-Symbol ist separat
+          .map(room => {
+            const isActive = currentRoom === room.id
+            return (
+              <Link key={room.path} href={room.path} className="no-underline">
+                <div
+                  className={`relative w-12 h-12 flex items-center justify-center rounded-full transition-transform duration-300
+                    ${isActive ? 'active-room' : 'inactive-room group'}
+                  `}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <Image
+                    src={room.image}
+                    alt={room.id}
+                    width={48}
+                    height={48}
+                    className="w-10 h-10 select-none pointer-events-none"
+                  />
+                  <span
+                    aria-hidden
+                    className={`absolute inset-0 rounded-full pointer-events-none
+                      ${isActive ? 'holo-ring holo-anim' : 'group-hover:holo-ring-hover'}
+                    `}
+                  />
+                </div>
+              </Link>
+            )
+          })}
       </nav>
 
-      {/* Puls-Glow Keyframes */}
-      <style jsx global>{`
-        @keyframes pulse-glow {
-          0%, 100% {
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-          }
-          50% {
-            box-shadow: 0 0 22px currentColor;
-          }
+      {/* ---------- Impuls-Raum Canvas ---------- */}
+      {currentRoom === 'impuls' && <ImpulsRoom />}
+
+      <style jsx>{`
+        @keyframes breathe {
+          0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(0,0,0,0)); }
+          50% { transform: scale(1.08); filter: drop-shadow(0 6px 18px rgba(99,102,241,0.25)); }
+          100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(0,0,0,0)); }
         }
-        .animate-pulse-glow {
-          animation: pulse-glow 2s infinite ease-in-out;
+
+        @keyframes holoPulse {
+          0% { box-shadow: 0 0 0 0 rgba(139,92,246,0.18), 0 0 12px rgba(139,92,246,0.12); }
+          70% { box-shadow: 0 0 26px 8px rgba(139,92,246,0.06), 0 0 32px rgba(139,92,246,0.08); }
+          100% { box-shadow: 0 0 0 0 rgba(139,92,246,0.00), 0 0 12px rgba(139,92,246,0.12); }
+        }
+
+        .active-room {
+          animation: breathe 2200ms ease-in-out infinite;
+          transform-origin: center;
+        }
+
+        .inactive-room:hover {
+          transform: translateY(-6px) scale(1.03);
+        }
+
+        .holo-ring {
+          box-shadow: 0 6px 20px rgba(139,92,246,0.16), inset 0 0 18px rgba(255,255,255,0.02);
+          transition: box-shadow 300ms ease, transform 300ms ease;
+          transform: translateY(-2px);
+        }
+
+        .holo-anim {
+          animation: holoPulse 2800ms ease-in-out infinite;
+        }
+
+        .group:hover .holo-ring-hover {
+          box-shadow: 0 10px 30px rgba(99,102,241,0.12);
+          transform: translateY(-2px) scale(1.03);
+        }
+
+        @media (max-width: 420px) {
+          .w-20.h-20 {
+            width: 72px;
+            height: 72px;
+          }
         }
       `}</style>
-    </>
+    </div>
   )
 }

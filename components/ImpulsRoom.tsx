@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useEffect, useRef, useState } from "react"
 
@@ -22,7 +22,6 @@ export default function ImpulsRoom() {
     window.addEventListener("resize", resizeCanvas)
 
     let pulseRadius = 50
-    const pulseDirection = 1
     let time = 0
 
     const animate = () => {
@@ -31,13 +30,11 @@ export default function ImpulsRoom() {
       const centerX = canvas.width / 2
       const centerY = canvas.height / 2
 
-      time += 0.016 // ~60fps timing
+      time += 0.016
 
-      // Dynamic pulsing based on breathing rhythm (4-7-8 pattern)
       const breathingCycle = Math.sin(time * 0.1) * 0.5 + 0.5
       pulseRadius = 30 + breathingCycle * 50
 
-      // Create multiple concentric circles for depth
       for (let i = 0; i < 3; i++) {
         const radius = pulseRadius + i * 20
         const opacity = (0.4 - i * 0.1) * (isActive ? 1.5 : 1)
@@ -53,7 +50,6 @@ export default function ImpulsRoom() {
         ctx.fill()
       }
 
-      // Add subtle energy particles
       for (let i = 0; i < 8; i++) {
         const angle = time * 0.5 + (i * Math.PI) / 4
         const distance = pulseRadius + 30
@@ -71,7 +67,6 @@ export default function ImpulsRoom() {
 
     animate()
 
-    // Listen for impuls activation
     const handleImpulsActivation = () => {
       setIsActive(true)
       setTimeout(() => setIsActive(false), 2000)

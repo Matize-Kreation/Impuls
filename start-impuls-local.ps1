@@ -1,60 +1,38 @@
-﻿# ─────────────────────────────────────────────
-# Impuls-System Lokaler Start – Desktop-Version
-# ─────────────────────────────────────────────
+﻿# D:\Matize\Matize-Kreation\Impuls\Impuls-local\start-impuls-local.ps1
+# Ultra-clean Impuls-Start:
+# - keine eigene Konsole offen
+# - nur Next.js-Dev-Fenster + Browser
 
-# UTF-8 Output für Konsole
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$projectPath = "D:\Matize\Matize-Kreation\Impuls\Impuls-local"
+$localURL = "http://localhost:3000"
 
-Write-Host "`n🔄 Starte Impuls-System lokal..." -ForegroundColor Cyan
-
-# Projektpfad anpassen
-$projectPath = "D:\Impuls-local"
-
+# Projektordner vorhanden?
 if (-not (Test-Path $projectPath)) {
-    Write-Host "❌ Projektpfad existiert nicht: $projectPath" -ForegroundColor Red
-    pause
     exit
 }
 
-# PowerShell in Projektordner wechseln
-Set-Location $projectPath
+# Dependencies grob prüfen (node_modules + next)
+$nodeModulesPath = Join-Path $projectPath "node_modules"
+$nextPackagePath = Join-Path $projectPath "node_modules\next\package.json"
 
-# Node Modules prüfen, ggf. installieren
-if (-not (Test-Path ".\node_modules")) {
-    Write-Host "📦 node_modules fehlen, installiere Abhängigkeiten..." -ForegroundColor Yellow
-    pnpm install
+if (-not (Test-Path $nodeModulesPath) -or -not (Test-Path $nextPackagePath)) {
+    # pnpm install im versteckten Fenster
+    Start-Process "powershell" -WindowStyle Hidden -ArgumentList "
+        -ExecutionPolicy Bypass -Command `
+        Set-Location `"$projectPath`"; `
+        pnpm install
+    "
 }
 
-# URL des Servers
-$localURL = "http://localhost:3000"
+# Next.js Dev-Server in eigenem Fenster starten
+Start-Process "powershell" -WindowStyle Normal -ArgumentList "
+    -NoExit -ExecutionPolicy Bypass -Command `
+    Set-Location `"$projectPath`"; `
+    pnpm dev
+"
 
-# Funktion zum Prüfen, ob Server läuft
-function Wait-ForServer {
-    Write-Host "`n⏳ Warte, bis der Server bereit ist..." -ForegroundColor Cyan
-    do {
-        Start-Sleep -Milliseconds 500
-        try {
-            Invoke-WebRequest -Uri $localURL -UseBasicParsing -TimeoutSec 1 | Out-Null
-            $serverReady = $true
-        }
-        catch {
-            $serverReady = $false
-        }
-    } until ($serverReady)
-    Write-Host "`n🌐 Server ist live! Öffne lokale Seite: $localURL" -ForegroundColor Green
-    Start-Process $localURL
-}
+# Browser öffnen
+Start-Process $localURL
 
-# Dev-Server starten im aktuellen Fenster
-Write-Host "`n🚀 Starte lokalen Dev-Server (Next.js)..." -ForegroundColor Cyan
-Write-Host "Logs und Hot-Reload werden hier angezeigt. Drücke STRG+C zum Beenden." -ForegroundColor Yellow
-
-# Dev-Server starten **im Hintergrund des aktuellen Fensters**
-Start-Process powershell -ArgumentList "-NoExit", "-Command pnpm dev"
-
-# Kurz warten und Browser öffnen, wenn Server bereit ist
-Wait-ForServer
-
-Write-Host "`n✅ Impuls-System gestartet." -ForegroundColor Green
-Write-Host "Drücke eine Taste, um das Fenster zu schließen..." -ForegroundColor Cyan
-[void][System.Console]::ReadKey($true)
+# dieses Script ist nur der Auslöser → direkt wieder weg
+exit

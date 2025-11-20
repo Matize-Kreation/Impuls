@@ -1,7 +1,14 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { roomsConfig, RoomType } from './roomsConfig'
+import { waveColors } from './waveColors'
+import { RoomType } from './types'
+
+export interface WaveColorConfig {
+  baseHue: number
+  accentHue: number
+  glow: number
+}
 
 interface EnhancedWavesProps {
   room?: RoomType | string
@@ -29,7 +36,7 @@ interface WaveConfig {
 const defaultWaveConfig: WaveConfig = { baseHue: 200, accentHue: 280, glow: 14 }
 
 export default function EnhancedWaves({
-  room = 'main',
+  room = 'impuls',
   bars = 96,
   intensity = 1.0,
   triggerKey,
@@ -78,9 +85,11 @@ export default function EnhancedWaves({
     resize()
     window.addEventListener('resize', resize)
 
-    // ✅ TypeScript-sichere Wave-Konfiguration
+    // -----------------------
+    // Farben pro Raum, behutsam
     const roomKey = room as RoomType
-    const waveCfg: WaveConfig = roomsConfig[roomKey] ? defaultWaveConfig : defaultWaveConfig
+    const waveCfg: WaveConfig = waveColors[roomKey] ?? defaultWaveConfig
+    // -----------------------
 
     const schedule = (fn: () => void, ms: number) => {
       const id = window.setTimeout(fn, ms)

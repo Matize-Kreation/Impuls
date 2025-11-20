@@ -1,7 +1,10 @@
+// D:\Matize\Matize-Kreation\Impuls\Impuls-local\app\layout.tsx
+
 import type React from "react"
 import type { Metadata } from "next"
 import { Suspense } from "react"
 import "./globals.css"
+import { MastersphereProvider } from "../components/MastersphereContext"
 
 export const metadata: Metadata = {
   title: "Impuls System",
@@ -18,7 +21,9 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body className="font-sans antialiased">
-        <Suspense fallback={null}>{children}</Suspense>
+        <MastersphereProvider>
+          <Suspense fallback={null}>{children}</Suspense>
+        </MastersphereProvider>
       </body>
     </html>
   )
