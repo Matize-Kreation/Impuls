@@ -257,3 +257,277 @@
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+
+@layer components {
+
+  /* Wrapper der Impuls-Gesamterklärung */
+  .impuls-doku-page {
+    position: relative;
+    max-width: 1100px;
+    margin-inline: auto;
+    padding: 2.5rem 1.25rem 3rem;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+    background:
+      radial-gradient(circle at top, #233a72 0, rgba(0, 0, 0, 0.1) 45%, transparent 60%),
+      radial-gradient(circle at bottom, #421b45 0, rgba(0, 0, 0, 0.6) 50%, #000 95%),
+      url("/Room-Shots/Impuls-Raum.png") center/cover no-repeat fixed;
+    backdrop-filter: blur(14px);
+  }
+
+  .impuls-doku-page .page-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .impuls-doku-page .page-header h1 {
+    font-size: clamp(2.2rem, 3vw, 2.8rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0 0 1rem;
+    background: linear-gradient(120deg, #4cc3ff, #b67dff);
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+
+  .impuls-doku-page .page-header p {
+    margin: 0.25rem 0;
+    color: var(--muted-foreground);
+    max-width: 720px;
+    margin-inline: auto;
+    line-height: 1.6;
+  }
+
+  .impuls-doku-page section {
+    margin-bottom: 2.5rem;
+  }
+
+  .impuls-doku-page section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .impuls-doku-page section h2 .section-tag {
+    display: inline-block;
+    margin-right: 0.5rem;
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    background: oklch(1 0 0 / 0.06);
+    color: var(--muted-foreground);
+    vertical-align: middle;
+  }
+
+  .impuls-doku-page .muted {
+    color: var(--muted-foreground);
+    font-size: 0.95rem;
+  }
+
+  .impuls-doku-page .card {
+    background: oklch(0.12 0 0 / 0.85);
+    border-radius: var(--radius-xl);
+    border: 1px solid oklch(1 0 0 / 0.08);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+    padding: 1.5rem 1.6rem;
+    backdrop-filter: blur(14px);
+  }
+
+  .impuls-doku-page .card+.card {
+    margin-top: 1rem;
+  }
+
+  .impuls-doku-page .tagline {
+    font-size: 0.92rem;
+    color: var(--muted-foreground);
+    margin-bottom: 1.25rem;
+    line-height: 1.6;
+  }
+
+  .impuls-doku-page .audio-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr);
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 900px) {
+    .impuls-doku-page .audio-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .impuls-doku-page .audio-block h3 {
+    margin-top: 0;
+    margin-bottom: 0.25rem;
+    font-size: 1.1rem;
+  }
+
+  .impuls-doku-page .audio-meta {
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
+    margin-bottom: 0.75rem;
+  }
+
+  .impuls-doku-page audio {
+    width: 100%;
+    margin-bottom: 0.9rem;
+  }
+
+  .impuls-doku-page .text-flow p {
+    margin: 0 0 0.7rem;
+    line-height: 1.6;
+  }
+
+  .impuls-doku-page .text-flow strong {
+    color: oklch(1 0 0);
+  }
+
+  .impuls-doku-page .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .impuls-doku-page .pill {
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    border: 1px solid oklch(1 0 0 / 0.12);
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .impuls-doku-page .pill.blue {
+    border-color: #4cc3ff;
+  }
+
+  .impuls-doku-page .pill.violet {
+    border-color: #b67dff;
+  }
+
+  .impuls-doku-page .pill.green {
+    border-color: #53e08a;
+  }
+
+  .impuls-doku-page .pill.orange {
+    border-color: #ff7b42;
+  }
+
+  .impuls-doku-page .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .impuls-doku-page .card h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+  }
+
+  .impuls-doku-page .card ul,
+  .impuls-doku-page .card ol {
+    margin: 0.3rem 0 0.3rem 1.1rem;
+    padding: 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .impuls-doku-page .card li+li {
+    margin-top: 0.15rem;
+  }
+
+  /* Gallery größer sichtbar */
+  .impuls-doku-page .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+  }
+
+  @media (min-width: 1200px) {
+    .impuls-doku-page .gallery-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .impuls-doku-page figure {
+    margin: 0;
+  }
+
+  .impuls-doku-page figure img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-xl);
+    border: 1px solid oklch(1 0 0 / 0.08);
+    display: block;
+  }
+
+  .impuls-doku-page figure figcaption {
+    margin-top: 0.6rem;
+    font-size: 0.9rem;
+    color: var(--muted-foreground);
+    line-height: 1.6;
+  }
+
+  .impuls-doku-page .badge {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid oklch(1 0 0 / 0.22);
+    margin-right: 0.4rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .impuls-doku-page .badge.struct {
+    border-color: #53e08a;
+  }
+
+  .impuls-doku-page .badge.emotion {
+    border-color: #4cc3ff;
+  }
+
+  .impuls-doku-page .badge.will {
+    border-color: #ff7b42;
+  }
+
+  .impuls-doku-page .badge.mind {
+    border-color: #b67dff;
+  }
+
+  .impuls-doku-page .badge.sense {
+    border-color: #ff5ca8;
+  }
+
+  .impuls-doku-page dl {
+    margin: 0;
+  }
+
+  .impuls-doku-page dt {
+    font-weight: 600;
+    margin-top: 0.7rem;
+  }
+
+  .impuls-doku-page dd {
+    margin: 0.2rem 0 0.4rem 0;
+    color: var(--muted-foreground);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .impuls-doku-page .page-footer {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid oklch(1 0 0 / 0.12);
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
+    text-align: center;
+  }
+}

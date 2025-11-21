@@ -6,11 +6,14 @@ import React, {
     useCallback,
     useContext,
     useEffect,
+    useMemo,
     useState,
 } from "react"
+
 import type { RoomType } from "./types"
 import type { ImpulsLogAtom, MastersphereZone } from "./MastersphereTypes"
 import { ELEMENT_TO_ZONE } from "./MastersphereTypes"
+import { processImpulsAtom } from "../lib/mastersphere-kernel"
 
 interface MastersphereContextValue {
     currentRoom: RoomType | null
@@ -21,11 +24,7 @@ interface MastersphereContextValue {
 
 const MastersphereContext = createContext<MastersphereContextValue | null>(null)
 
-export const MastersphereProvider = ({
-    children,
-}: {
-    children: React.ReactNode
-}) => {
+export const MastersphereProvider = ({ children }: { children: React.ReactNode }) => {
     const [currentRoom, setCurrentRoom] = useState<RoomType | null>(null)
     const [currentZone, setCurrentZone] = useState<MastersphereZone | null>(null)
     const [logs, setLogs] = useState<ImpulsLogAtom[]>([])
@@ -36,60 +35,71 @@ export const MastersphereProvider = ({
             const existingRaw = window.localStorage.getItem("impuls_log_atoms")
             if (!existingRaw) return
 
-            const existing: ImpulsLogAtom[] = JSON.parse(existingRaw)
+            const existing = JSON.parse(existingRaw)
+            if (!Array.isArray(existing) || existing.length === 0) return
 
-            if (Array.isArray(existing) && existing.length > 0) {
-                setLogs(existing)
+            setLogs(existing as ImpulsLogAtom[])
 
-                // Letztes Atom als aktueller Kontext
-                const last = existing[existing.length - 1]
-                setCurrentRoom(last.room)
-                setCurrentZone(last.zone)
+            // Letztes Atom als aktueller Kontext
+            const last = existing[existing.length - 1] as ImpulsLogAtom
+            setCurrentRoom(last.room)
+            setCurrentZone(last.zone)
+        } catch (error) {
+            console.error("[Mastersphäre] Fehler beim Laden der Impuls-Logs:", error)
+        }
+    }, [])
+
+    const registerImpulse = useCallback(
+        (room: RoomType, note?: string) => {
+            const zone = ELEMENT_TO_ZONE[room]
+            const timestamp = new Date().toISOString()
+
+            const baseAtom: ImpulsLogAtom = {
+                id: `${timestamp}-${room}`,
+                timestamp,
+                room,
+                zone,
+                note: note ?? "",
             }
-        } catch (error) {
-            console.error("Fehler beim Laden der Impuls-Logs:", error)
-        }
-    }, [])
 
-    const registerImpulse = useCallback((room: RoomType, note?: string) => {
-        const zone = ELEMENT_TO_ZONE[room]
-        const timestamp = new Date().toISOString()
+            // Mastersphären-Prozessor anwenden
+            const processed = processImpulsAtom(baseAtom)
 
-        const atom: ImpulsLogAtom = {
-            id: `${timestamp}-${room}`,
-            timestamp,
-            room,
-            zone,
-            note: note ?? "",
-        }
+            // Debug-Feedback in der Konsole
+            console.log("[Mastersphäre] Neuer Impuls (processed):", processed)
 
-        // Debug-Feedback in der Konsole
-        console.log("[Mastersphäre] Neuer Impuls:", atom)
+            // Aktiven Zustand setzen
+            setCurrentRoom(room)
+            setCurrentZone(zone)
 
-        // Aktiven Zustand setzen
-        setCurrentRoom(room)
-        setCurrentZone(zone)
+            // In-Memory-Logs ergänzen (processed hat zusätzlich meta)
+            setLogs((prev) => [...prev, processed])
 
-        // In-Memory-Logs ergänzen
-        setLogs((prev) => [...prev, atom])
+            // Persistenz in localStorage
+            try {
+                const existingRaw = window.localStorage.getItem("impuls_log_atoms")
+                const existing: ImpulsLogAtom[] = existingRaw ? JSON.parse(existingRaw) : []
+                existing.push(processed as ImpulsLogAtom)
+                window.localStorage.setItem(
+                    "impuls_log_atoms",
+                    JSON.stringify(existing)
+                )
+            } catch (error) {
+                console.error("[Mastersphäre] Archiv-Persist-Error:", error)
+            }
+        },
+        []
+    )
 
-        // Persistenz in localStorage (später Archiv-Sphäre / Export)
-        try {
-            const existingRaw = window.localStorage.getItem("impuls_log_atoms")
-            const existing: ImpulsLogAtom[] = existingRaw ? JSON.parse(existingRaw) : []
-            existing.push(atom)
-            window.localStorage.setItem("impuls_log_atoms", JSON.stringify(existing))
-        } catch (error) {
-            console.error("Archiv-Persist-Error:", error)
-        }
-    }, [])
-
-    const value: MastersphereContextValue = {
-        currentRoom,
-        currentZone,
-        logs,
-        registerImpulse,
-    }
+    const value = useMemo<MastersphereContextValue>(
+        () => ({
+            currentRoom,
+            currentZone,
+            logs,
+            registerImpulse,
+        }),
+        [currentRoom, currentZone, logs, registerImpulse]
+    )
 
     return (
         <MastersphereContext.Provider value={value}>

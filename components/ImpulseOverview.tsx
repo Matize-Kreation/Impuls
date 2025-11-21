@@ -1,9 +1,13 @@
-// D:\Matize\Matize-Kreation\Impuls\Impuls-local\components\ImpulseOverview.tsx
+// components/ImpulseOverview.tsx
+
 "use client"
 
 import React, { useMemo } from "react"
 import { useMastersphere } from "./MastersphereContext"
 import type { RoomType } from "./types"
+import { MastersphereStatusPanel } from "./MastersphereStatusPanel"
+import { MastersphereDiagnosticsPanel } from "./MastersphereDiagnosticsPanel"
+import { MastersphereKiDiagnosePanel } from "./MastersphereKiDiagnosePanel"
 
 const ROOM_LABEL: Record<RoomType, string> = {
     impuls: "Impulsraum (Meta)",
@@ -57,52 +61,75 @@ export default function ImpulseOverview() {
 
     return (
         <aside
-            className="absolute right-4 top-4 z-40 max-w-xs rounded-2xl border border-white/10 bg-black/50 backdrop-blur-md px-4 py-3 text-xs text-white/85 shadow-lg"
+            className="
+                absolute right-4 top-4 z-40
+                w-full max-w-2xl
+                rounded-2xl border border-white/10
+                bg-black/50 px-4 py-3
+                text-xs text-white/85 shadow-lg backdrop-blur-md
+                max-h-[calc(100vh-2rem)] overflow-y-auto
+            "
             aria-label="Impuls-Fokusübersicht"
         >
-            <div className="flex flex-col gap-1.5">
-                <div className="text-[0.7rem] uppercase tracking-[0.18em] text-white/60">
-                    Fokuszone · Überblick
-                </div>
+            <div className="flex flex-col gap-3">
+                {/* --- Fokusübersicht (oben, volle Breite) --- */}
+                <div className="flex flex-col gap-1.5">
+                    <div className="text-[0.7rem] uppercase tracking-[0.18em] text-white/60">
+                        Fokuszone · Überblick
+                    </div>
 
-                <div className="text-sm font-semibold">
-                    {total === 0 ? "Noch keine Impulse registriert" : `Impulse gesamt: ${total}`}
-                </div>
+                    <div className="text-sm font-semibold">
+                        {total === 0
+                            ? "Noch keine Impulse registriert"
+                            : `Impulse gesamt: ${total}`}
+                    </div>
 
-                {total > 0 && (
-                    <>
-                        <div className="text-[0.75rem] text-white/75">
-                            Dominantes Element:
-                            <br />
-                            <span className="font-semibold text-white">
-                                {dominantLabel}
-                            </span>
-                        </div>
-
-                        {currentRoom && currentZone && (
-                            <div className="text-[0.75rem] text-white/70">
-                                Aktiver Kontext:
+                    {total > 0 && (
+                        <>
+                            <div className="text-[0.75rem] text-white/75">
+                                Dominantes Element:
                                 <br />
-                                <span className="font-semibold">
-                                    Raum: {ROOM_LABEL[currentRoom]}
+                                <span className="font-semibold text-white">
+                                    {dominantLabel}
                                 </span>
-                                <br />
-                                <span className="text-white/80">Zone: {currentZone.toUpperCase()}</span>
                             </div>
-                        )}
 
-                        <div className="mt-1.5 grid grid-cols-3 gap-x-3 gap-y-1.5 text-[0.7rem] text-white/60">
-                            {(Object.keys(counts) as RoomType[]).map((room) => (
-                                <div key={room} className="flex flex-col">
-                                    <span className="truncate">{ROOM_LABEL[room]}</span>
-                                    <span className="text-white/85">
-                                        {counts[room]}×
+                            {currentRoom && currentZone && (
+                                <div className="text-[0.75rem] text-white/70">
+                                    Aktiver Kontext:
+                                    <br />
+                                    <span className="font-semibold">
+                                        Raum: {ROOM_LABEL[currentRoom]}
+                                    </span>
+                                    <br />
+                                    <span className="text-white/80">
+                                        Zone: {currentZone.toUpperCase()}
                                     </span>
                                 </div>
-                            ))}
-                        </div>
-                    </>
-                )}
+                            )}
+
+                            <div className="mt-1.5 grid grid-cols-3 gap-x-3 gap-y-1.5 text-[0.7rem] text-white/60">
+                                {(Object.keys(counts) as RoomType[]).map((room) => (
+                                    <div key={room} className="flex flex-col">
+                                        <span className="truncate">{ROOM_LABEL[room]}</span>
+                                        <span className="text-white/85">
+                                            {counts[room]}×
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {/* --- Kurzstatus direkt unter der Fokuszone --- */}
+                <MastersphereStatusPanel />
+
+                {/* --- Diagnose & KI-Diagnose nebeneinander --- */}
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <MastersphereDiagnosticsPanel />
+                    <MastersphereKiDiagnosePanel />
+                </div>
             </div>
         </aside>
     )

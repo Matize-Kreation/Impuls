@@ -1,57 +1,190 @@
-# ==========================================================
-# Deploy Script für Impuls-local (Git + Vercel, kein Backup)
-# ==========================================================
+# =====================================================================
+# deploy.ps1 — Impuls-local Dauer-Deploy (GitHub main + Vercel prod)
+# Robust gegen: "nothing to commit", fehlende Tools, Env-Drift,
+# Projekt-Link-Fehler, Remote-/Branch-Probleme, unerwartete Exit-Codes.
+# =====================================================================
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+# --------------------------- KONFIG ----------------------------------
+
+# Pfad zu deinem lokalen Impuls-local Projekt
 $projectPath = "D:\Matize\Matize-Kreation\Impuls\Impuls-local"
 
-Write-Host "Starting DEPLOY for Impuls-local..." -ForegroundColor Green
+# Git Remote & Branch
+$remoteName = "origin"
+$branchName = "main"
 
-# --- GIT BEREICH -------------------------------------------------------------
+# Commit-Text (wenn Changes existieren)
+$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$commitMessage = "Auto Deploy $timestamp"
 
-Write-Host "Running Git commit & push..." -ForegroundColor Yellow
+# Vercel Optionen
+$doVercelPullBeforeDeploy = $true     # zieht Env/Settings, verhindert Drift
+$requireVercelLink = $true     # bricht ab, wenn nicht gelinkt
+$vercelScope = $null     # optional: "dein-team-slug" falls nötig
 
-try {
-    Set-Location $projectPath
+# UX
+$pauseAtEnd = $false                 # true = wartet auf Taste am Ende
 
-    git add .
+# ------------------------- HELFER ------------------------------------
 
-    $commitMessage = "Auto Deploy $timestamp"
-    git commit -m $commitMessage
-
-    git push origin main
-
-    Write-Host "Git push successful." -ForegroundColor Green
+function Fail {
+    param([string]$msg)
+    Write-Host "✖ $msg" -ForegroundColor Red
+    exit 1
 }
-catch {
-    Write-Host "Git commit/push skipped or failed: $_" -ForegroundColor Red
+
+function Info {
+    param([string]$msg)
+    Write-Host "• $msg" -ForegroundColor Cyan
 }
 
-# --- VERCEL DEPLOYMENT -------------------------------------------------------
+function Step {
+    param([string]$msg)
+    Write-Host "`n=== $msg ===" -ForegroundColor Yellow
+}
 
-Write-Host "Starting Vercel deployment..." -ForegroundColor Yellow
+function Test-CommandAvailable {
+    param([Parameter(Mandatory)][string]$Name)
+    if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
+        Fail "Command '$Name' not found. Bitte installiere/konfiguriere es."
+    }
+}
 
-try {
-    Set-Location $projectPath
+function Invoke-Checked {
+    param(
+        [Parameter(Mandatory)][scriptblock]$ScriptBlock,
+        [Parameter(Mandatory)][string]$FailMsg
+    )
+    & $ScriptBlock
+    if ($LASTEXITCODE -ne 0) { Fail "$FailMsg (ExitCode $LASTEXITCODE)" }
+}
 
-    # Vercel Deployment ausführen und Exitcode prüfen
-    $null = & vercel --prod --yes
-    $exitCode = $LASTEXITCODE
+# ------------------------- PRE-FLIGHT --------------------------------
 
-    if ($exitCode -ne 0) {
-        Write-Host "Error during Vercel deployment. Exit code: $exitCode" -ForegroundColor Red
+Step "Pre-flight checks"
+
+if (-not (Test-Path $projectPath)) {
+    Fail "Project path not found: $projectPath"
+}
+
+Set-Location $projectPath
+Info "Working directory: $(Get-Location)"
+
+Test-CommandAvailable git
+Test-CommandAvailable vercel
+
+# Prüfen ob Git-Repo
+if (-not (Test-Path (Join-Path $projectPath ".git"))) {
+    Fail "Kein Git-Repository gefunden in $projectPath"
+}
+
+# Remote vorhanden?
+$remotes = git remote
+if ($remotes -notcontains $remoteName) {
+    Fail "Git remote '$remoteName' nicht gefunden. Vorhanden: $remotes"
+}
+
+# Branch check (nur Warnung, kein Hard-Fail)
+$currentBranch = (git rev-parse --abbrev-ref HEAD).Trim()
+if ($currentBranch -ne $branchName) {
+    Write-Host "⚠ Du bist auf Branch '$currentBranch', Ziel ist '$branchName'." -ForegroundColor DarkYellow
+    Write-Host "  Ich deploye trotzdem, aber prüfe ob das so gewollt ist." -ForegroundColor DarkYellow
+}
+
+# --------------------------- GIT -------------------------------------
+
+Step "Git: stage / commit / push"
+
+Info "git status:"
+git status
+
+Info "Staging changes..."
+Invoke-Checked { git add . } "git add failed"
+
+# Prüfen auf staged changes
+$staged = (git diff --cached --name-only)
+$hasChanges = -not [string]::IsNullOrWhiteSpace($staged)
+
+if ($hasChanges) {
+    Info "Changes detected. Committing..."
+    Invoke-Checked { git commit -m $commitMessage } "git commit failed"
+    Info "Commit created: $commitMessage"
+}
+else {
+    Info "No changes to commit. Skipping commit."
+}
+
+Info "Pushing to $remoteName/$branchName ..."
+Invoke-Checked { git push $remoteName $branchName } "git push failed"
+Info "Git push successful."
+
+# -------------------------- VERCEL -----------------------------------
+
+Step "Vercel: link check"
+
+$vercelDir = Join-Path $projectPath ".vercel"
+$vercelProjectFile = Join-Path $vercelDir "project.json"
+
+if (-not (Test-Path $vercelProjectFile)) {
+    if ($requireVercelLink) {
+        Write-Host "⚠ .vercel/project.json fehlt -> Projekt ist nicht gelinkt." -ForegroundColor DarkYellow
+        Write-Host "  Versuche 'vercel link --yes'..." -ForegroundColor DarkYellow
+
+        if ($null -ne $vercelScope) {
+            Invoke-Checked { vercel link --yes --scope $vercelScope } "vercel link failed"
+        }
+        else {
+            Invoke-Checked { vercel link --yes } "vercel link failed"
+        }
+
+        if (-not (Test-Path $vercelProjectFile)) {
+            Fail "Vercel link scheint nicht erfolgreich. Bitte einmal manuell: 'vercel link'"
+        }
+
+        Info "Vercel project linked."
     }
     else {
-        Write-Host "Vercel deployment successful." -ForegroundColor Green
+        Write-Host "⚠ Projekt nicht gelinkt; fahre fort (kann zum Prompt führen)." -ForegroundColor DarkYellow
     }
 }
-catch {
-    Write-Host "Error during Vercel deployment (PowerShell-level): $_" -ForegroundColor Red
+else {
+    Info "Vercel link OK (.vercel/project.json vorhanden)."
 }
 
-Write-Host ""
-Write-Host "Deploy finished." -ForegroundColor Cyan
-Write-Host ""
-Pause
+if ($doVercelPullBeforeDeploy) {
+    Step "Vercel: pull env/settings"
+    if ($null -ne $vercelScope) {
+        Invoke-Checked { vercel pull --yes --scope $vercelScope } "vercel pull failed"
+    }
+    else {
+        Invoke-Checked { vercel pull --yes } "vercel pull failed"
+    }
+    Info "Vercel pull successful."
+}
+
+Step "Vercel: production deploy"
+
+if ($null -ne $vercelScope) {
+    Invoke-Checked { vercel deploy --prod --yes --scope $vercelScope } "vercel deploy failed"
+}
+else {
+    Invoke-Checked { vercel deploy --prod --yes } "vercel deploy failed"
+}
+
+Info "Vercel deployment successful."
+
+
+# --------------------------- DONE ------------------------------------
+
+Step 'Done'
+Write-Host '✔ Deploy finished successfully.' -ForegroundColor Green
+
+# Pause optional – komplett safe (nur Single Quotes)
+if ($pauseAtEnd) {
+    Write-Host ''
+    Write-Host 'Press any key to close...' -ForegroundColor Gray
+    $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+}
